@@ -52,7 +52,7 @@ totalSamples = 2000;
 
 %initialize variables
 Mu = zeros(totalComponents, totalSamples+1);
-Mu(:,1) = [-1 1]; %can be any random values
+Mu(:,1) = [-3; 3]; %can be any random values
 %likelihood of first Mu
 Xrep = repmat(X,totalComponents,1);
 logPX = sum(log(sum(bsxfun(@times,exp(-bsxfun(@minus,Xrep,Mu(:,1)).^2),mixtureWeights')))); %log to avoid underflow
@@ -62,8 +62,8 @@ logPPosteriorOld = logPX + logPPrior;
 t=2;
 while t <= totalSamples+1
     
-    %sample from proposal distribution mu ~ Gaussian(0,20I)
-    MuProposal = normrnd(0,sqrt(20),totalComponents,1);
+    %sample from proposal distribution mu ~ Gaussian(mu^(t-1),10I)
+    MuProposal = normrnd(Mu(:,t-1),sqrt(10),totalComponents,1);
     
     %compute data likelihood
     logPX = sum(log(sum(bsxfun(@times,exp(-bsxfun(@minus,Xrep,MuProposal).^2),mixtureWeights')))); %log to avoid underflow
@@ -107,7 +107,7 @@ for k=1:totalComponents
     figure(k);
     y = MuFinal(k,:);
     delta = (max(y)-min(y))/100;
-    x = (min(y)-1):deltaTrue:(max(y)+1);
+    x = (min(y)-1):delta:(max(y)+1);
     [counts binValues] = hist(y,x);
     hist(y,x);
     title(strcat('component ',num2str(k)));
@@ -115,10 +115,8 @@ for k=1:totalComponents
     %plot true distribution line on top
     deltaTrue = (max(y)-min(y))/1000;
     xTrue = (min(y)-1):deltaTrue:(max(y)+1);
-    yTrue = sum(exp(-(bsxfun(@minus,repmat(xTrue,totalComponents,1),muTrue(1:totalComponents)')).^2 / 2*tau));
+    yTrue = exp(-(xTrue - muTrue(k)).^2);
     yTrue = yTrue * max(counts) / max(yTrue); %adjust curve to plotted histogram
     hold on;
     plot(xTrue,yTrue,'r');
 end
-
-
